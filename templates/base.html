@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}FixIt Campus &bull; Smart College Maintenance{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+  {% block navbar %}
+  <!-- Modern Clean Navbar -->
+  <header class="navbar {% block nav_theme %}in-cream{% endblock %}">
+    <div class="nav-container">
+      <a href="{{ url_for('index') }}" class="brand-pill">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <span>FixIt Campus</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('submit_complaint') }}">Report a problem</a></li>
+        <li><a href="{{ url_for('track') }}">Track complaints</a></li>
+
+        {% if current_user.role == 'admin' %}
+          <li><a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a></li>
+          <li><a href="{{ url_for('admin_workers') }}">Workers</a></li>
+          <li><a href="{{ url_for('admin_reports') }}">Reports</a></li>
+        {% elif current_user.role == 'worker' %}
+          <li><a href="{{ url_for('worker_dashboard') }}">Technician Portal</a></li>
+        {% endif %}
+      </ul>
+
+      <div class="nav-actions">
+        {% if current_user.id %}
+          <!-- Notifications Dropdown -->
+          <div class="notif-container">
+            <button class="notif-btn" title="Notifications" aria-label="Notifications">
+              🔔
+              {% if unread_count > 0 %}
+                <span class="notif-badge">{{ unread_count }}</span>
+              {% endif %}
+            </button>
+            <div class="notif-dropdown">
+              <div style="font-weight:700; font-size:0.88rem; padding-bottom:0.5rem; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between;">
+                <span>Notifications</span>
+                {% if unread_count > 0 %}
+                  <span style="font-size:0.75rem; color:var(--brand-orange);">{{ unread_count }} unread</span>
+                {% endif %}
+              </div>
+              {% if notifications %}
+                {% for n in notifications %}
+                  <div class="notif-item" style="{% if not n.is_read %}background-color: #f0fdf4; border-radius:4px; margin-top:2px;{% endif %}">
+                    <div style="font-weight:700; font-size:0.85rem; color:var(--bg-dark-green);">{{ n.title }}</div>
+                    <div style="color:#475569; font-size:0.8rem; margin:2px 0;">{{ n.message }}</div>
+                    {% if n.link %}
+                      <a href="{{ n.link }}" style="font-size:0.78rem; color:var(--brand-orange); text-decoration:underline;">View Details &rarr;</a>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div style="padding:1rem 0; text-align:center; color:#94a3b8; font-size:0.85rem;">No new notifications</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <span class="badge" style="background:#e2e8f0; color:#334155; font-size:0.82rem;">
+            {{ current_user.role.upper() }}: {{ current_user.full_name }}
+          </span>
+          <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline" style="border-radius: var(--radius-md);">Sign Out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn-nav-light">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  {% endblock %}
+
+  <!-- Main Flash Message Container -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="max-width: 1280px; margin: 1rem auto 0; padding: 0 2rem; width: 100%;">
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; font-size:1.1rem; cursor:pointer; color:inherit;">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Page Content -->
+  {% block content %}{% endblock %}
+
+  {% block footer %}
+  <!-- Clean Footer -->
+  <footer class="footer">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 0 2rem;">
+      <p style="font-weight: 500;">&copy; {{ now_year }} FixIt Campus &bull; Voice-Enabled Campus Facilities & Maintenance System</p>
+    </div>
+  </footer>
+  {% endblock %}
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

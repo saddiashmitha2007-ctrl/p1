@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}FixIt Campus &bull; Something broken? Just say it.{% endblock %}
+
+{% block navbar %}
+<!-- Integrated Green Grid Navbar for Homepage -->
+<div class="green-grid-bg">
+  <header class="navbar in-green">
+    <div class="nav-container">
+      <a href="{{ url_for('index') }}" class="brand-pill">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <span>FixIt Campus</span>
+      </a>
+
+      <div class="nav-actions">
+        {% if current_user.id %}
+          <a href="{{ url_for('submit_complaint') }}" style="color: white; font-weight: 600; text-decoration: none; margin-right: 0.5rem;">Report problem</a>
+          <a href="{{ url_for('track') }}" style="color: var(--text-cream); font-weight: 600; text-decoration: none; margin-right: 0.5rem;">Track</a>
+          {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('admin_dashboard') }}" style="color: var(--text-cream); font-weight: 600; text-decoration: none; margin-right: 0.5rem;">Dashboard</a>
+          {% elif current_user.role == 'worker' %}
+            <a href="{{ url_for('worker_dashboard') }}" style="color: var(--text-cream); font-weight: 600; text-decoration: none; margin-right: 0.5rem;">Worker Portal</a>
+          {% endif %}
+          <a href="{{ url_for('logout') }}" class="btn-nav-light">Sign out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn-nav-light">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-wrapper">
+    <div class="hero-content">
+      <div class="hero-badge-pill">
+        CAMPUS MAINTENANCE, SIMPLIFIED
+      </div>
+      
+      <h1 class="hero-title">
+        Something broken?<br>
+        <span class="highlight-orange">Just say it.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Staff report problems by voice or text. The right maintenance worker gets it straight away, and you can follow it until it's fixed.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="{{ url_for('submit_complaint') }}" class="btn-hero-orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+            <line x1="8" x2="16" y1="22" y2="22"/>
+          </svg>
+          <span>Report a problem</span>
+        </a>
+        <a href="{{ url_for('track') }}" class="btn-hero-outline">
+          <span>Track my complaints</span>
+          <span>&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- 4 Feature Cards (Overlapping Hero exactly from user screenshot) -->
+<section class="features-section">
+  <div class="features-grid">
+    <!-- Card 01: Speak or type -->
+    <div class="feature-card">
+      <div class="feature-card-header">
+        <div class="feature-icon-svg">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+            <line x1="8" x2="16" y1="22" y2="22"/>
+          </svg>
+        </div>
+        <span class="feature-num">01</span>
+      </div>
+      <h3 class="feature-title">Speak or type</h3>
+      <p class="feature-text">
+        "The fan in Room 204 is not working." Review the text, then send.
+      </p>
+    </div>
+
+    <!-- Card 02: Sorted automatically -->
+    <div class="feature-card">
+      <div class="feature-card-header">
+        <div class="feature-icon-svg">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/>
+            <path d="M12 5h4a2 2 0 1 1 0 4h-4"/>
+            <circle cx="18" cy="7" r="1"/>
+            <path d="M12 12h5a2 2 0 1 1 0 4h-5"/>
+            <circle cx="19" cy="14" r="1"/>
+            <path d="M12 17h3a2 2 0 1 1 0 4h-3"/>
+            <circle cx="17" cy="19" r="1"/>
+          </svg>
+        </div>
+        <span class="feature-num">02</span>
+      </div>
+      <h3 class="feature-title">Sorted automatically</h3>
+      <p class="feature-text">
+        Problem type, location and priority are filled in for you.
+      </p>
+    </div>
+
+    <!-- Card 03: No double reports -->
+    <div class="feature-card">
+      <div class="feature-card-header">
+        <div class="feature-icon-svg">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="13" height="13" x="9" y="9" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </div>
+        <span class="feature-num">03</span>
+      </div>
+      <h3 class="feature-title">No double reports</h3>
+      <p class="feature-text">
+        Similar open complaints in the same place are shown before you submit.
+      </p>
+    </div>
+
+    <!-- Card 04: Right worker, notified -->
+    <div class="feature-card">
+      <div class="feature-card-header">
+        <div class="feature-icon-svg">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/>
+            <path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/>
+            <path d="M4 15v-3a8 8 0 0 1 16 0v3"/>
+          </svg>
+        </div>
+        <span class="feature-num">04</span>
+      </div>
+      <h3 class="feature-title">Right worker, notified</h3>
+      <p class="feature-text">
+        Matched by skill and current workload, then alerted instantly.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 Roles Row (Matches user screenshot 3 exactly) -->
+<section class="roles-summary-section">
+  <!-- Staff Role -->
+  <div class="role-summary-item">
+    <div class="role-check-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="role-summary-content">
+      <h4>Staff</h4>
+      <p>Report, review, track, and reopen if it isn't really fixed.</p>
+    </div>
+  </div>
+
+  <!-- Maintenance Workers Role -->
+  <div class="role-summary-item">
+    <div class="role-check-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="role-summary-content">
+      <h4>Maintenance workers</h4>
+      <p>See assigned jobs with location and priority, add repair notes, mark resolved.</p>
+    </div>
+  </div>
+
+  <!-- Administrators Role -->
+  <div class="role-summary-item">
+    <div class="role-check-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#073824" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="role-summary-content">
+      <h4>Administrators</h4>
+      <p>See everything, reassign work, manage workers, and read reports.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Main Body / Quick Track & Dashboard Overview -->
+<div class="main-wrapper" style="padding-top: 2rem;">
+  <!-- Quick Lookup Box -->
+  <div class="card" style="border-left: 4px solid var(--brand-orange); background: white;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-dark);">
+          🔍 Quick Complaint Lookup
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 0.2rem;">
+          Track any complaint in real time using its ticket code (e.g. <code>CMP-1001</code>) or location.
+        </p>
+      </div>
+
+      <form action="{{ url_for('track') }}" method="GET" style="display: flex; gap: 0.65rem; flex: 1; max-width: 460px; min-width: 280px;">
+        <input type="text" name="code" class="form-control" placeholder="Enter ticket code (e.g. CMP-1001)..." required>
+        <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Track Ticket</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Live Campus Stats Counters -->
+  <div class="stats-grid" style="margin-top: 1.5rem;">
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #e0f2fe; color: #0284c7;">📋</div>
+      <div class="stat-info">
+        <h3>{{ total }}</h3>
+        <p>Total Complaints</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #ede9fe; color: #7c3aed;">⏳</div>
+      <div class="stat-info">
+        <h3>{{ pending }}</h3>
+        <p>Pending / Assigned</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #fef3c7; color: #d97706;">⚡</div>
+      <div class="stat-info">
+        <h3>{{ in_progress }}</h3>
+        <p>In Progress</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #dcfce7; color: #16a34a;">✅</div>
+      <div class="stat-info">
+        <h3>{{ resolved }}</h3>
+        <p>Resolved Issues</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Issues Master Log -->
+  <div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+      <h3 class="card-title">🕒 Recently Reported Campus Issues</h3>
+      <a href="{{ url_for('track') }}" class="btn btn-sm btn-outline">View All &rarr;</a>
+    </div>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Issue Title</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Technician</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_complaints %}
+            {% for c in recent_complaints %}
+              <tr>
+                <td><strong><a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" style="color:var(--bg-dark-green);">{{ c.complaint_code }}</a></strong></td>
+                <td>
+                  <div style="font-weight: 700;">{{ c.title }}</div>
+                </td>
+                <td><span class="category-tag">{{ c.category }}</span></td>
+                <td>📍 {{ c.location }}</td>
+                <td>
+                  <span class="badge badge-prio-{{ c.priority.lower() }}">
+                    {{ c.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-{{ c.status.lower().replace(' ', '-') }}">
+                    {{ c.status }}
+                  </span>
+                </td>
+                <td>{{ c.worker_name or 'Auto-assigning...' }}</td>
+                <td>
+                  <a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" class="btn btn-sm btn-outline">
+                    Details
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                No complaints currently logged.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

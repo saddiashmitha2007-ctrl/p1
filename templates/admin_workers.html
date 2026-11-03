@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Technicians &bull; FixIt Campus{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+  <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
+        Technicians & Maintenance Crew
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
+        Monitor workload distribution, adjust availability status, and onboard new staff.
+      </p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">&larr; Back to Dashboard</a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.75rem; align-items: flex-start;">
+    <!-- Workers List Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">👷 Registered Maintenance Technicians ({{ workers|length }})</h3>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Technician</th>
+              <th>Specialization</th>
+              <th>Contact</th>
+              <th>Active Workload</th>
+              <th>Availability</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if workers %}
+              {% for w in workers %}
+                <tr>
+                  <td>
+                    <div style="font-weight: 700; color: var(--text-dark);">{{ w.name }}</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">User: <code>{{ w.username or 'N/A' }}</code></div>
+                  </td>
+                  <td><span class="category-tag">{{ w.specialization }}</span></td>
+                  <td>
+                    <div>📞 {{ w.phone }}</div>
+                    {% if w.email %}
+                      <div style="font-size: 0.78rem; color: var(--text-muted);">✉️ {{ w.email }}</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge" style="background-color: {% if w.active_count > 3 %}#fee2e2; color:#991b1b;{% else %}#f1f5f9; color:#334155;{% endif %}; font-size: 0.82rem;">
+                      {{ w.active_count }} Active Jobs
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" style="background-color: {% if w.availability == 'Available' %}#dcfce7; color:#166534;{% elif w.availability == 'Busy' %}#fef3c7; color:#92400e;{% else %}#fee2e2; color:#991b1b;{% endif %};">
+                      {{ w.availability }}
+                    </span>
+                  </td>
+                  <td>
+                    <form method="POST" action="{{ url_for('toggle_worker_availability') }}" style="display: flex; gap: 0.25rem;">
+                      <input type="hidden" name="worker_id" value="{{ w.id }}">
+                      <select name="availability" onchange="this.form.submit()" class="form-select" style="padding: 0.35rem 0.5rem; font-size: 0.82rem; width: auto;">
+                        <option value="Available" {% if w.availability == 'Available' %}selected{% endif %}>Available</option>
+                        <option value="Busy" {% if w.availability == 'Busy' %}selected{% endif %}>Busy</option>
+                        <option value="On Leave" {% if w.availability == 'On Leave' %}selected{% endif %}>On Leave</option>
+                      </select>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  No workers registered in the database.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Onboard New Worker Form -->
+    <div class="card" style="box-shadow: var(--shadow-md);">
+      <div class="card-header">
+        <h3 class="card-title">➕ Add New Technician</h3>
+      </div>
+
+      <form method="POST" action="{{ url_for('admin_workers') }}">
+        <div class="form-group">
+          <label class="form-label" for="workerName">Worker Full Name *</label>
+          <input type="text" id="workerName" name="name" class="form-control" placeholder="Ramesh Verma" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="workerSpec">Specialization Category *</label>
+          <select id="workerSpec" name="specialization" class="form-select" required>
+            <option value="" disabled selected>Select specialization...</option>
+            {% for cat in categories %}
+              <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="workerPhone">Mobile Phone *</label>
+          <input type="tel" id="workerPhone" name="phone" class="form-control" placeholder="9876543200" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="workerEmail">Campus Email</label>
+          <input type="email" id="workerEmail" name="email" class="form-control" placeholder="worker@campus.edu">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="workerUser">Login Username *</label>
+          <input type="text" id="workerUser" name="username" class="form-control" placeholder="worker_elec3" required>
+          <div class="form-hint">Used by technician to access their portal.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="workerPass">Temporary Password</label>
+          <input type="password" id="workerPass" name="password" class="form-control" value="worker123" required>
+          <div class="form-hint">Default is <code>worker123</code>.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+          Add Technician
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

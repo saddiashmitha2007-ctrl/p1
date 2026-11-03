@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Technician Portal &bull; FixIt Campus{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+  <!-- Top Profile Banner -->
+  <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
+        Technician Service Portal
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
+        Logged in as: <strong>{{ worker.name if worker else current_user.full_name }}</strong> &bull;
+        Specialization: <span class="category-tag">{{ worker.specialization if worker else 'General' }}</span>
+      </p>
+    </div>
+
+    <!-- Availability Toggle Badge -->
+    {% if worker %}
+      <form method="POST" action="{{ url_for('toggle_worker_availability') }}" style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.5rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">Status:</span>
+        <select name="availability" onchange="this.form.submit()" class="form-select" style="padding: 0.35rem 0.6rem; font-size: 0.85rem; font-weight: 700;">
+          <option value="Available" {% if worker.availability == 'Available' %}selected{% endif %}>🟢 Available for Jobs</option>
+          <option value="Busy" {% if worker.availability == 'Busy' %}selected{% endif %}>🟡 Busy (On Site)</option>
+          <option value="On Leave" {% if worker.availability == 'On Leave' %}selected{% endif %}>🔴 On Leave</option>
+        </select>
+      </form>
+    {% endif %}
+  </div>
+
+  <!-- Active Assigned Jobs Section -->
+  <div class="card" style="border-top: 4px solid var(--bg-dark-green);">
+    <div class="card-header">
+      <h3 class="card-title">
+        ⚡ Active Assigned Tasks ({{ active_tasks|length }})
+      </h3>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Ordered by priority urgency</span>
+    </div>
+
+    {% if active_tasks %}
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        {% for t in active_tasks %}
+          <div style="background: white; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.35rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span class="badge badge-prio-{{ t.priority.lower() }}">{{ t.priority }} Priority</span>
+                  <span class="badge badge-{{ t.status.lower().replace(' ', '-') }}">{{ t.status }}</span>
+                  <strong><a href="{{ url_for('complaint_detail', complaint_id=t.id) }}" style="color:var(--bg-dark-green);">{{ t.complaint_code }}</a></strong>
+                  {% if t.is_voice_submitted %}<span title="Voice Reported">🎙️</span>{% endif %}
+                </div>
+                <h4 style="font-size: 1.2rem; font-weight: 800; margin-top: 0.4rem; color: var(--text-dark);">
+                  {{ t.title }}
+                </h4>
+              </div>
+
+              <div style="font-size: 0.85rem; color: var(--text-muted); text-align: right;">
+                <div>Reported: {{ t.created_at[:16] }}</div>
+                <div>Staff: <strong>{{ t.staff_name }}</strong> {% if t.staff_contact %}(📞 {{ t.staff_contact }}){% endif %}</div>
+              </div>
+            </div>
+
+            <!-- Problem Location & Description -->
+            <div style="background: #faf7f2; padding: 0.95rem 1.15rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-size: 0.95rem;">
+              <div style="font-weight: 700; color: var(--bg-dark-green); margin-bottom: 0.25rem;">
+                📍 Location: {{ t.location }}
+              </div>
+              <div style="color: var(--text-dark); line-height: 1.5;">
+                {{ t.description }}
+              </div>
+              {% if t.troubleshooting_tips %}
+                <div style="margin-top: 0.5rem; font-size: 0.82rem; color: #15803d; border-top: 1px dashed #cbd5e1; padding-top: 0.4rem;">
+                  💡 Preliminary check: {{ t.troubleshooting_tips.splitlines()[0] if t.troubleshooting_tips else '' }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Quick Action Form for Technician -->
+            <form method="POST" action="{{ url_for('worker_update_status') }}" style="background: #f0fdf4; border: 1px solid #ccfbf1; padding: 1.15rem; border-radius: var(--radius-md);">
+              <input type="hidden" name="complaint_id" value="{{ t.id }}">
+
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                <div style="flex: 2; min-width: 260px;">
+                  <label class="form-label" style="font-size: 0.85rem; margin-bottom: 0.3rem;">
+                    Repair Notes / Actions Taken (Required to resolve):
+                  </label>
+                  <input type="text" name="repair_note" class="form-control" placeholder="e.g. Replaced switch, tested circuit, operating normally..." style="background: white;">
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; flex: 1; min-width: 220px;">
+                  {% if t.status != 'In Progress' %}
+                    <button type="submit" name="status" value="In Progress" class="btn btn-sm btn-outline" style="flex: 1; background: white;">
+                      ▶️ Start Work
+                    </button>
+                  {% endif %}
+                  <button type="submit" name="status" value="Resolved" class="btn btn-sm btn-success" style="flex: 1;">
+                    ✅ Mark Resolved
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
+        <h4 style="font-size: 1.2rem; font-weight: 800; color: var(--text-dark);">All Caught Up!</h4>
+        <p style="font-size: 0.92rem; margin-top: 0.25rem;">You currently have no open maintenance assignments.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Completed History Table -->
+  <div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+      <h3 class="card-title">📜 Recently Completed Jobs</h3>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Title & Location</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Resolved Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if completed_tasks %}
+            {% for ct in completed_tasks %}
+              <tr>
+                <td><strong><a href="{{ url_for('complaint_detail', complaint_id=ct.id) }}" style="color:var(--bg-dark-green);">{{ ct.complaint_code }}</a></strong></td>
+                <td>
+                  <div style="font-weight: 700;">{{ ct.title }}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">📍 {{ ct.location }}</div>
+                </td>
+                <td><span class="category-tag">{{ ct.category }}</span></td>
+                <td><span class="badge badge-prio-{{ ct.priority.lower() }}">{{ ct.priority }}</span></td>
+                <td><span class="badge badge-resolved">{{ ct.status }}</span></td>
+                <td style="font-size: 0.82rem; color: var(--text-muted);">{{ ct.resolved_at or ct.updated_at }}</td>
+                <td>
+                  <a href="{{ url_for('complaint_detail', complaint_id=ct.id) }}" class="btn btn-sm btn-outline">
+                    View Notes
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                No completed jobs logged in history yet.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

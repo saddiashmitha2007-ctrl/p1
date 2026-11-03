@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics &bull; FixIt Campus{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+  <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
+        Maintenance Analytics & Reports
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
+        Complaint categories breakdown, status distribution, and technician performance.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <button onclick="window.print()" class="btn btn-outline">
+        🖨️ Print Report
+      </button>
+      <a href="{{ url_for('export_csv') }}" class="btn btn-primary">
+        📥 Export CSV Data
+      </a>
+    </div>
+  </div>
+
+  <!-- Visual Charts Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.75rem; margin-bottom: 2rem;">
+    <!-- Category Breakdown Chart -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📊 Complaints by Category</h3>
+      </div>
+      <div style="max-height: 280px; display: flex; justify-content: center;">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Status Distribution Chart -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📈 Current Status Breakdown</h3>
+      </div>
+      <div style="max-height: 280px;">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Worker Workload & Resolved Performance Chart -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+      <h3 class="card-title">👷 Technician Workload vs. Resolved Tickets</h3>
+    </div>
+    <div style="min-height: 300px;">
+      <canvas id="workerChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Detailed Metrics Data Tables -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.75rem;">
+    <!-- Category Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Category Summary</h3>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align: right;">Total Logged</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in category_counts %}
+            <tr>
+              <td><strong>{{ cat.category }}</strong></td>
+              <td style="text-align: right;">{{ cat.count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Priority Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Priority Breakdown</h3>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Priority Level</th>
+            <th style="text-align: right;">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in priority_counts %}
+            <tr>
+              <td>
+                <span class="badge badge-prio-{{ p.priority.lower() }}">{{ p.priority }}</span>
+              </td>
+              <td style="text-align: right; font-weight: 700;">{{ p.count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const catData = [
+    {% for c in category_counts %}
+      { category: "{{ c.category }}", count: {{ c.count }} },
+    {% endfor %}
+  ];
+
+  const statusData = [
+    {% for s in status_counts %}
+      { status: "{{ s.status }}", count: {{ s.count }} },
+    {% endfor %}
+  ];
+
+  const workerData = [
+    {% for w in worker_stats %}
+      { name: "{{ w.name }}", active_count: {{ w.active_count }}, resolved_count: {{ w.resolved_count or 0 }} },
+    {% endfor %}
+  ];
+
+  initReportCharts(catData, statusData, workerData);
+});
+</script>
+{% endblock %}

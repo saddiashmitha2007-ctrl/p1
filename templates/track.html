@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Track Complaints &bull; FixIt Campus{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+  <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
+        Track Maintenance Complaints
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
+        Search tickets, view live technician progress, or filter by category.
+      </p>
+    </div>
+    <a href="{{ url_for('submit_complaint') }}" class="btn btn-orange">
+      🎙️ Report New Problem
+    </a>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="card" style="margin-bottom: 1.75rem; padding: 1.5rem;">
+    <form method="GET" action="{{ url_for('track') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; align-items: flex-end;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="codeSearch">Search</label>
+        <input type="text" id="codeSearch" name="code" class="form-control"
+               value="{{ query_code }}" placeholder="Ticket code, room, or title...">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="statusFilter">Status</label>
+        <select id="statusFilter" name="status" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="Submitted" {% if status_filter == 'Submitted' %}selected{% endif %}>Submitted</option>
+          <option value="Assigned" {% if status_filter == 'Assigned' %}selected{% endif %}>Assigned</option>
+          <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+          <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+          <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>Closed</option>
+          <option value="Reopened" {% if status_filter == 'Reopened' %}selected{% endif %}>Reopened</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="categoryFilter">Category</label>
+        <select id="categoryFilter" name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">Filter</button>
+        <a href="{{ url_for('track') }}" class="btn btn-outline" title="Reset Filters">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Complaints Table -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Title & Location</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned Technician</th>
+            <th>Reported</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if complaints %}
+            {% for c in complaints %}
+              <tr>
+                <td>
+                  <strong><a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" style="color:var(--bg-dark-green); font-size: 0.95rem;">{{ c.complaint_code }}</a></strong>
+                  {% if c.is_voice_submitted %}
+                    <span title="Reported via Voice Assistant" style="cursor:help;">🎙️</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="font-weight: 700;">{{ c.title }}</div>
+                  <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.15rem;">📍 {{ c.location }}</div>
+                </td>
+                <td><span class="category-tag">{{ c.category }}</span></td>
+                <td>
+                  <span class="badge badge-prio-{{ c.priority.lower() }}">
+                    {{ c.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-{{ c.status.lower().replace(' ', '-') }}">
+                    {{ c.status }}
+                  </span>
+                </td>
+                <td>
+                  {% if c.worker_name %}
+                    <div style="font-weight: 600;">{{ c.worker_name }}</div>
+                    {% if c.worker_phone %}
+                      <div style="font-size: 0.78rem; color: var(--text-muted);">📞 {{ c.worker_phone }}</div>
+                    {% endif %}
+                  {% else %}
+                    <span style="color: #94a3b8; font-style: italic;">Auto-matching...</span>
+                  {% endif %}
+                </td>
+                <td style="font-size: 0.82rem; color: var(--text-muted);">
+                  {{ c.created_at[:16] }}
+                </td>
+                <td>
+                  <a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" class="btn btn-sm btn-outline">
+                    View &rarr;
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-muted);">
+                <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
+                <p style="font-size: 1.1rem; font-weight: 700; color: var(--text-dark);">No complaints matched your search.</p>
+                <p style="font-size: 0.9rem; margin-top: 0.25rem;">Try adjusting your filter terms or submit a new complaint.</p>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

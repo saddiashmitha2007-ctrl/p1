@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard &bull; FixIt Campus{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+  <!-- Top Bar -->
+  <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
+        Facilities Administrator Dashboard
+      </h1>
+      <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
+        Monitor campus tickets, dispatch technicians, and manage resolution pipelines.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('export_csv') }}" class="btn btn-outline" title="Download CSV Report">
+        📥 Export CSV
+      </a>
+      <a href="{{ url_for('admin_workers') }}" class="btn btn-primary">
+        👷 Manage Technicians
+      </a>
+      <a href="{{ url_for('admin_reports') }}" class="btn btn-orange">
+        📊 Analytics
+      </a>
+    </div>
+  </div>
+
+  <!-- Unassigned Complaints Alert Banner (If Any) -->
+  {% if unassigned_count > 0 %}
+    <div class="alert alert-warning" style="border-left: 5px solid var(--brand-orange); display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.75rem;">
+      <div>
+        <strong>⚠️ Attention Required:</strong> There are <strong>{{ unassigned_count }}</strong> complaints without an assigned worker.
+      </div>
+      <a href="{{ url_for('admin_dashboard', status='Submitted') }}" class="btn btn-sm btn-outline" style="background: white;">
+        Review Unassigned &rarr;
+      </a>
+    </div>
+  {% endif %}
+
+  <!-- KPI Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #e0f2fe; color: #0284c7;">📋</div>
+      <div class="stat-info">
+        <h3>{{ total_count }}</h3>
+        <p>Total Complaints</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #ede9fe; color: #7c3aed;">⏳</div>
+      <div class="stat-info">
+        <h3>{{ pending_count }}</h3>
+        <p>Pending / Assigned</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #fef3c7; color: #d97706;">⚡</div>
+      <div class="stat-info">
+        <h3>{{ in_progress_count }}</h3>
+        <p>In Progress</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #fee2e2; color: #dc2626;">🚨</div>
+      <div class="stat-info">
+        <h3>{{ high_prio_count }}</h3>
+        <p>Critical / High Prio</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #dcfce7; color: #16a34a;">✅</div>
+      <div class="stat-info">
+        <h3>{{ resolved_count }}</h3>
+        <p>Resolved / Closed</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Toolbar -->
+  <div class="card" style="padding: 1.5rem; margin-bottom: 1.75rem;">
+    <form method="GET" action="{{ url_for('admin_dashboard') }}" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto auto; gap: 0.85rem; align-items: flex-end;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="adminSearch">Search Complaints</label>
+        <input type="text" id="adminSearch" name="q" class="form-control"
+               value="{{ search }}" placeholder="Ticket code, title, room, staff...">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="statusFilter">Status</label>
+        <select id="statusFilter" name="status" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="Submitted" {% if status_filter == 'Submitted' %}selected{% endif %}>Submitted</option>
+          <option value="Assigned" {% if status_filter == 'Assigned' %}selected{% endif %}>Assigned</option>
+          <option value="In Progress" {% if status_filter == 'In Progress' %}selected{% endif %}>In Progress</option>
+          <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+          <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>Closed</option>
+          <option value="Reopened" {% if status_filter == 'Reopened' %}selected{% endif %}>Reopened</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="categoryFilter">Category</label>
+        <select id="categoryFilter" name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="priorityFilter">Priority</label>
+        <select id="priorityFilter" name="priority" class="form-select">
+          <option value="">All Priorities</option>
+          <option value="Critical" {% if priority_filter == 'Critical' %}selected{% endif %}>Critical</option>
+          <option value="High" {% if priority_filter == 'High' %}selected{% endif %}>High</option>
+          <option value="Medium" {% if priority_filter == 'Medium' %}selected{% endif %}>Medium</option>
+          <option value="Low" {% if priority_filter == 'Low' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="height: 42px;">Filter</button>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="height: 42px;">Reset</a>
+    </form>
+  </div>
+
+  <!-- Complaints Data Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">📋 Maintenance Master Log ({{ complaints|length }} tickets)</h3>
+    </div>
+
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Title & Location</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Reporter</th>
+            <th>Assigned Technician</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if complaints %}
+            {% for c in complaints %}
+              <tr>
+                <td>
+                  <strong><a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" style="color:var(--bg-dark-green);">{{ c.complaint_code }}</a></strong>
+                  {% if c.is_voice_submitted %}
+                    <span title="Voice Reported">🎙️</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="font-weight: 700;">{{ c.title }}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">📍 {{ c.location }}</div>
+                </td>
+                <td><span class="category-tag">{{ c.category }}</span></td>
+                <td>
+                  <span class="badge badge-prio-{{ c.priority.lower() }}">
+                    {{ c.priority }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge badge-{{ c.status.lower().replace(' ', '-') }}">
+                    {{ c.status }}
+                  </span>
+                </td>
+                <td>
+                  <div style="font-weight: 600;">{{ c.staff_name }}</div>
+                  {% if c.staff_contact %}
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">📞 {{ c.staff_contact }}</div>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.worker_name %}
+                    <div style="font-weight: 700; color: var(--bg-dark-green);">{{ c.worker_name }}</div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted);">{{ c.worker_spec }}</div>
+                  {% else %}
+                    <span style="color: #ef4444; font-weight: 700;">⚠️ Unassigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display: flex; gap: 0.35rem;">
+                    <a href="{{ url_for('complaint_detail', complaint_id=c.id) }}" class="btn btn-sm btn-outline">
+                      View
+                    </a>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openAssignModal({{ c.id }}, '{{ c.complaint_code }}', '{{ c.category }}', {{ c.assigned_worker_id or 'null' }})">
+                      Assign
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                No complaints match the filter criteria.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Assign Technician Modal -->
+<div id="assignModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 480px; margin: 1rem; box-shadow: var(--shadow-lg);">
+    <div class="card-header">
+      <h3 class="card-title" id="modalTitle">Assign Technician</h3>
+      <button type="button" onclick="closeAssignModal()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer;">&times;</button>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_assign_worker') }}">
+      <input type="hidden" name="complaint_id" id="modalComplaintId">
+
+      <div class="form-group">
+        <label class="form-label" for="modalWorkerSelect">Choose Maintenance Worker *</label>
+        <select name="worker_id" id="modalWorkerSelect" class="form-select" required>
+          <option value="" disabled selected>Select technician...</option>
+          {% for w in workers %}
+            <option value="{{ w.id }}" data-spec="{{ w.specialization }}">
+              {{ w.name }} ({{ w.specialization }}) &bull; Active: {{ w.active_count }} &bull; {{ w.availability }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="modalRemarks">Assignment Remarks</label>
+        <input type="text" name="remarks" id="modalRemarks" class="form-control" placeholder="Optional notes for technician...">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem;">
+        <button type="button" class="btn btn-outline" onclick="closeAssignModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Assignment</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openAssignModal(complaintId, code, category, currentWorkerId) {
+  document.getElementById('modalComplaintId').value = complaintId;
+  document.getElementById('modalTitle').textContent = `Assign Technician: ${code}`;
+  const select = document.getElementById('modalWorkerSelect');
+
+  let foundMatch = false;
+  for (let i = 0; i < select.options.length; i++) {
+    const opt = select.options[i];
+    if (opt.getAttribute('data-spec') === category) {
+      if (!foundMatch && !currentWorkerId) {
+        opt.selected = true;
+        foundMatch = true;
+      }
+    }
+    if (currentWorkerId && parseInt(opt.value) === parseInt(currentWorkerId)) {
+      opt.selected = true;
+    }
+  }
+
+  const modal = document.getElementById('assignModal');
+  modal.style.display = 'flex';
+}
+
+function closeAssignModal() {
+  document.getElementById('assignModal').style.display = 'none';
+}
+</script>
+{% endblock %}

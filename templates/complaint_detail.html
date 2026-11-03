@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}{{ complaint.complaint_code }} &bull; FixIt Campus{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+  <!-- Top Navigation & Summary -->
+  <div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('track') }}" style="font-size: 0.92rem; color: var(--text-muted); font-weight: 600; text-decoration: none;">&larr; Back to Complaints List</a>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <h1 style="font-size: 2.1rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.02em;">
+            {{ complaint.complaint_code }}: {{ complaint.title }}
+          </h1>
+          {% if complaint.is_voice_submitted %}
+            <span class="badge" style="background:#e0e7ff; color:#3730a3;" title="Submitted using Voice Assistant">🎙️ Voice Reported</span>
+          {% endif %}
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.35rem;">
+          Reported on {{ complaint.created_at }} by <strong>{{ complaint.staff_name }}</strong>
+          {% if complaint.staff_contact %}(📞 {{ complaint.staff_contact }}){% endif %}
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem; align-items: center;">
+        <span class="badge badge-prio-{{ complaint.priority.lower() }}" style="font-size: 0.88rem; padding: 0.35rem 0.85rem;">
+          {{ complaint.priority }} Priority
+        </span>
+        <span class="badge badge-{{ complaint.status.lower().replace(' ', '-') }}" style="font-size: 0.88rem; padding: 0.35rem 0.85rem;">
+          {{ complaint.status }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.75rem; align-items: flex-start;">
+    <!-- Left Column: Details, History, Repair Notes -->
+    <div>
+      <!-- Overview Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">📋 Problem Details</h3>
+          <span class="category-tag">{{ complaint.category }}</span>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <strong style="color: var(--text-muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em;">Location</strong>
+          <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-top: 0.15rem;">
+            📍 {{ complaint.location }}
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <strong style="color: var(--text-muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em;">Description</strong>
+          <p style="margin-top: 0.35rem; font-size: 1rem; line-height: 1.6; background: #faf7f2; padding: 1.1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); color: var(--text-dark);">
+            {{ complaint.description }}
+          </p>
+        </div>
+
+        {% if complaint.troubleshooting_tips %}
+          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 1.25rem; margin-top: 1.25rem;">
+            <h4 style="color: #166534; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">
+              💡 Recommended Preliminary Actions / Safety Guide:
+            </h4>
+            <pre style="font-family: inherit; font-size: 0.88rem; white-space: pre-wrap; color: #14532d;">{{ complaint.troubleshooting_tips }}</pre>
+          </div>
+        {% endif %}
+
+        {% if complaint.duplicate_of_id %}
+          <div style="background-color: #fffbeb; border: 1px solid #fde68a; padding: 0.85rem; border-radius: 8px; margin-top: 1rem; font-size: 0.88rem; color: #92400e;">
+            ℹ️ <strong>Linked Duplicate:</strong> Confirmed to be related to earlier ticket
+            <a href="{{ url_for('complaint_detail', complaint_id=complaint.duplicate_of_id) }}" style="font-weight: 700; color: var(--brand-orange); text-decoration: underline;">#{{ complaint.duplicate_of_id }}</a>.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Status History Timeline -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">⏱️ Progress Timeline & Status History</h3>
+        </div>
+        <div class="timeline">
+          {% if history %}
+            {% for h in history %}
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <strong>{{ h.new_status }}</strong>
+                    <span>{{ h.timestamp }}</span>
+                  </div>
+                  <div style="font-size: 0.92rem; color: var(--text-dark);">
+                    {{ h.remarks or 'Status updated' }}
+                  </div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    Updated by: <em>{{ h.changed_by_name }}</em>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p style="color: var(--text-muted); font-size: 0.9rem;">No status history recorded yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Repair Notes Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">🔧 Technician Repair Notes</h3>
+        </div>
+        {% if notes %}
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            {% for n in notes %}
+              <div style="background-color: #faf7f2; border-left: 4px solid var(--bg-dark-green); padding: 0.95rem 1.15rem; border-radius: 0 var(--radius-md) var(--radius-md) 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+                  <strong>{{ n.author_name }} ({{ n.author_role.capitalize() }})</strong>
+                  <span>{{ n.created_at }}</span>
+                </div>
+                <p style="font-size: 0.95rem; color: var(--text-dark); margin: 0;">{{ n.note }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">
+            No technician repair notes added yet.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Column: Assigned Worker Info & Actions -->
+    <div>
+      <!-- Assigned Worker Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">👷 Assigned Technician</h3>
+        </div>
+        {% if complaint.worker_name %}
+          <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 1rem;">
+            <div style="width: 50px; height: 50px; border-radius: 50%; background: #dcfce7; color: #166534; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+              🛠️
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-dark);">{{ complaint.worker_name }}</div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">{{ complaint.worker_spec }} Specialist</div>
+            </div>
+          </div>
+          <div style="font-size: 0.92rem; color: var(--text-dark); margin-bottom: 0.5rem;">
+            📞 <strong>Contact:</strong> {{ complaint.worker_phone or 'N/A' }}
+          </div>
+        {% else %}
+          <div style="background-color: #fee2e2; border: 1px solid #fecaca; padding: 0.95rem; border-radius: var(--radius-md); color: #991b1b; font-size: 0.88rem; margin-bottom: 0.75rem;">
+            ⚠️ <strong>Unassigned:</strong> Waiting for technician matching or administrator allocation.
+          </div>
+        {% endif %}
+
+        <!-- Admin Reassignment Form -->
+        {% if current_user.role == 'admin' %}
+          <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
+            <h4 style="font-size: 0.92rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--bg-dark-green);">
+              Assign / Reassign Technician
+            </h4>
+            <form method="POST" action="{{ url_for('admin_assign_worker') }}">
+              <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+              <div class="form-group">
+                <select name="worker_id" class="form-select" required>
+                  <option value="" disabled>Select technician...</option>
+                  {% for w in all_workers %}
+                    <option value="{{ w.id }}" {% if complaint.assigned_worker_id == w.id %}selected{% endif %}>
+                      {{ w.name }} ({{ w.specialization }} - {{ w.availability }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <input type="text" name="remarks" class="form-control" placeholder="Admin assignment note...">
+              </div>
+              <button type="submit" class="btn btn-sm btn-primary" style="width: 100%;">
+                Update Assignment
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Worker Action Card -->
+      {% if current_user.role in ['worker', 'admin'] and complaint.status not in ['Resolved', 'Closed'] %}
+        <div class="card" style="border: 2px solid var(--bg-dark-green);">
+          <div class="card-header">
+            <h3 class="card-title" style="color: var(--bg-dark-green);">⚡ Technician Actions</h3>
+          </div>
+
+          <form method="POST" action="{{ url_for('worker_update_status') }}">
+            <input type="hidden" name="complaint_id" value="{{ complaint.id }}">
+
+            {% if complaint.status != 'In Progress' %}
+              <div style="margin-bottom: 1.25rem;">
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                  Acknowledge that repair has started on site:
+                </p>
+                <button type="submit" name="status" value="In Progress" class="btn btn-orange" style="width: 100%;">
+                  ▶️ Mark as In Progress
+                </button>
+              </div>
+            {% endif %}
+
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+              <label class="form-label" for="repair_note">Add Repair Notes & Resolve *</label>
+              <textarea name="repair_note" id="repair_note" rows="3" class="form-control"
+                        placeholder="Detail the actions taken (e.g. replaced fan capacitor, welded bracket)..." required></textarea>
+              <div class="form-hint">A repair note is required to confirm resolution.</div>
+
+              <button type="submit" name="status" value="Resolved" class="btn btn-success" style="width: 100%; margin-top: 0.85rem;">
+                ✅ Confirm & Mark as Resolved
+              </button>
+            </div>
+          </form>
+        </div>
+      {% endif %}
+
+      <!-- Reopen Action Card -->
+      {% if complaint.status in ['Resolved', 'Closed'] %}
+        <div class="card" style="border: 1px solid #fecaca; background: #fff5f5;">
+          <div class="card-header" style="border-bottom-color: #fed7aa;">
+            <h3 class="card-title" style="color: #991b1b;">🔄 Not Fixed? Reopen Issue</h3>
+          </div>
+          <p style="font-size: 0.88rem; color: #7f1d1d; margin-bottom: 0.75rem;">
+            If the problem was not completely resolved or has reoccurred, you can reopen this complaint.
+          </p>
+
+          {% if current_user.id %}
+            <form method="POST" action="{{ url_for('reopen_complaint', complaint_id=complaint.id) }}">
+              <div class="form-group">
+                <label class="form-label" for="reopen_reason" style="color: #991b1b;">Reason for Reopening *</label>
+                <textarea name="reason" id="reopen_reason" rows="2" class="form-control"
+                          placeholder="Explain why the repair was incomplete..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-danger" style="width: 100%;">
+                Reopen Complaint
+              </button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-sm btn-danger" style="width: 100%;">
+              Sign in to Reopen
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
